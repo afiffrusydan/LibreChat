@@ -12,23 +12,6 @@ import { QueryKeys } from '../keys';
 import * as s from '../schemas';
 import * as t from '../types';
 
-export const useAbortRequestWithMessage = (): UseMutationResult<
-  void,
-  Error,
-  { endpoint: string; abortKey: string; message: string }
-> => {
-  const queryClient = useQueryClient();
-  return useMutation(
-    ({ endpoint, abortKey, message }) =>
-      dataService.abortRequestWithMessage(endpoint, abortKey, message),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries([QueryKeys.balance]);
-      },
-    },
-  );
-};
-
 export const useGetSharedMessages = (
   shareId: string,
   config?: UseQueryOptions<t.TSharedMessagesResponse>,
@@ -329,6 +312,40 @@ export const useUpdateUserPluginsMutation = (
     onSuccess: (...args) => {
       queryClient.invalidateQueries([QueryKeys.user]);
       onSuccess?.(...args);
+    },
+  });
+};
+
+export const useReinitializeMCPServerMutation = (): UseMutationResult<
+  {
+    success: boolean;
+    message: string;
+    serverName: string;
+    oauthRequired?: boolean;
+    oauthUrl?: string;
+  },
+  unknown,
+  string,
+  unknown
+> => {
+  const queryClient = useQueryClient();
+  return useMutation((serverName: string) => dataService.reinitializeMCPServer(serverName), {
+    onSuccess: () => {
+      queryClient.refetchQueries([QueryKeys.tools]);
+    },
+  });
+};
+
+export const useCancelMCPOAuthMutation = (): UseMutationResult<
+  m.CancelMCPOAuthResponse,
+  unknown,
+  string,
+  unknown
+> => {
+  const queryClient = useQueryClient();
+  return useMutation((serverName: string) => dataService.cancelMCPOAuth(serverName), {
+    onSuccess: () => {
+      queryClient.invalidateQueries([QueryKeys.mcpConnectionStatus]);
     },
   });
 };

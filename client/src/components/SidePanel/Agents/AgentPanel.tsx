@@ -8,19 +8,19 @@ import {
   SystemRoles,
   EModelEndpoint,
   isAssistantsEndpoint,
-  defaultAgentFormValues,
 } from 'librechat-data-provider';
-import type { AgentForm, AgentPanelProps, StringOption } from '~/common';
+import type { AgentForm, StringOption } from '~/common';
 import {
   useCreateAgentMutation,
   useUpdateAgentMutation,
   useGetAgentByIdQuery,
 } from '~/data-provider';
+import { createProviderOption, getDefaultAgentFormValues } from '~/utils';
 import { useSelectAgent, useLocalize, useAuthContext } from '~/hooks';
+import { useAgentPanelContext } from '~/Providers/AgentPanelContext';
 import AgentPanelSkeleton from './AgentPanelSkeleton';
-import { createProviderOption } from '~/utils';
-import { useToastContext } from '~/Providers';
 import AdvancedPanel from './Advanced/AdvancedPanel';
+import { useToastContext } from '~/Providers';
 import AgentConfig from './AgentConfig';
 import AgentSelect from './AgentSelect';
 import AgentFooter from './AgentFooter';
@@ -28,19 +28,18 @@ import { Button } from '~/components';
 import ModelPanel from './ModelPanel';
 import { Panel } from '~/common';
 
-export default function AgentPanel({
-  setAction,
-  activePanel,
-  actions = [],
-  setActivePanel,
-  agent_id: current_agent_id,
-  setCurrentAgentId,
-  agentsConfig,
-  endpointsConfig,
-}: AgentPanelProps) {
+export default function AgentPanel() {
   const localize = useLocalize();
   const { user } = useAuthContext();
   const { showToast } = useToastContext();
+  const {
+    activePanel,
+    agentsConfig,
+    setActivePanel,
+    endpointsConfig,
+    setCurrentAgentId,
+    agent_id: current_agent_id,
+  } = useAgentPanelContext();
 
   const { onSelect: onSelectAgent } = useSelectAgent();
 
@@ -51,7 +50,7 @@ export default function AgentPanel({
 
   const models = useMemo(() => modelsQuery.data ?? {}, [modelsQuery.data]);
   const methods = useForm<AgentForm>({
-    defaultValues: defaultAgentFormValues,
+    defaultValues: getDefaultAgentFormValues(),
   });
 
   const { control, handleSubmit, reset } = methods;
@@ -277,7 +276,7 @@ export default function AgentPanel({
                 variant="outline"
                 className="w-full justify-center"
                 onClick={() => {
-                  reset(defaultAgentFormValues);
+                  reset(getDefaultAgentFormValues());
                   setCurrentAgentId(undefined);
                 }}
                 disabled={agentQuery.isInitialLoading}
@@ -315,26 +314,13 @@ export default function AgentPanel({
           </div>
         )}
         {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.model && (
-          <ModelPanel
-            setActivePanel={setActivePanel}
-            agent_id={agent_id}
-            providers={providers}
-            models={models}
-          />
+          <ModelPanel models={models} providers={providers} setActivePanel={setActivePanel} />
         )}
         {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.builder && (
-          <AgentConfig
-            actions={actions}
-            setAction={setAction}
-            createMutation={create}
-            agentsConfig={agentsConfig}
-            setActivePanel={setActivePanel}
-            endpointsConfig={endpointsConfig}
-            setCurrentAgentId={setCurrentAgentId}
-          />
+          <AgentConfig createMutation={create} />
         )}
         {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.advanced && (
-          <AdvancedPanel setActivePanel={setActivePanel} agentsConfig={agentsConfig} />
+          <AdvancedPanel />
         )}
         {canEditAgent && !agentQuery.isInitialLoading && (
           <AgentFooter
